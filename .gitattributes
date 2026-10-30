@@ -1,0 +1,19 @@
+# Normalize text files in the repository; keep binaries untouched.
+* text=auto
+
+*.py   text
+*.md   text
+*.txt  text
+*.html text
+*.css  text
+*.js   text
+*.json text
+*.yml  text
+*.yaml text
+
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
+*.exe  binary

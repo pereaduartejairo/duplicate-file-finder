@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Duplicate File Finder</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f0f2f5;
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        header {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        header h1 {
+            color: #2c3e50;
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+        }
+
+        /* Controls Section */
+        .controls {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        .control-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #555;
+        }
+
+        .control-group select,
+        .control-group input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+
+        .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2980b9;
+        }
+
+        .btn-secondary {
+            background: #95a5a6;
+            color: white;
+            margin-right: 10px;
+        }
+
+        .btn-secondary:hover {
+            background: #7f8c8d;
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+
+        .btn-success {
+            background: #27ae60;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #219150;
+        }
+
+        /* Status */
+        #status {
+            margin: 15px 0;
+            padding: 10px;
+            background: #ecf0f1;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        /* Results */
+        #results {
+            display: none;
+        }
+
+        .results-header {
+            background: white;
+            padding: 15px 20px;
+            border-radius: 8px 8px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            color: #7f8c8d;
+            text-transform: uppercase;
+        }
+
+        .results-header span {
+            font-weight: bold;
+            color: #333;
+            text-transform: none;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card-header {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-header h3 {
+            font-size: 13px;
+            color: #555;
+        }
+
+        .card-header .hash {
+            font-size: 11px;
+            color: #888;
+            font-family: monospace;
+        }
+
+        .card-body {
+            padding: 15px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            margin: 8px 0;
+        }
+
+        .checkbox-group input {
+            margin-right: 8px;
+            width: auto;
+        }
+
+        .file-path {
+            font-size: 11px;
+            color: #666;
+            line-height: 1.4;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .file-path small {
+            color: #888;
+            font-size: 10px;
+            display: block;
+            margin-top: 2px;
+        }
+
+        /* Stats */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .stat-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #3498db;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #7f8c8d;
+            margin-top: 5px;
+        }
+
+        /* Report Section */
+        #report-section {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            display: none;
+        }
+
+        #report-section textarea {
+            width: 100%;
+            height: 200px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius 4px;
+            font-family: monospace;
+            font-size: 12px;
+            resize: vertical;
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .stats {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>🔍 Duplicate File Finder</h1>
+        <p>Scan folders, select duplicates, and generate reports</p>
+    </header>
+
+    <!-- Controls -->
+    <div class="controls" id="controls">
+        <div class="control-group">
+            <label>Select folders to scan</label>
+            <input type="text" id="folder-path" readonly placeholder="Click Browse">
+            <button class="btn btn-primary" onclick="browseFolder()">Browse...</button>
+        </div>
+
+        <div class="control-group">
+            <label>Exclude folders (comma-separated, e.g., system,temp)</label>
+            <input type="text" id="exclude-folders" value="system,temp,program files">
+        </div>
+
+        <div class="control-group">
+            <label>Minimum file size (bytes, 0 for all)</label>
+            <input type="number" id="min-size" value="0">
+        </div>
+
+        <div class="control-group">
+            <label>Hash algorithm</label>
+            <select id="hash-algo">
+                <option value="md5">MD5 (fast)</option>
+                <option value="sha1" selected>SHA1</option>
+                <option value="sha256">SHA256 (most accurate)</option>
+            </select>
+        </div>
+
+        <div style="margin: 20px 0;">
+            <button class="btn btn-primary" onclick="startScan()">▶ Start Scan</button>
+            <button class="btn btn-danger" onclick="cancelScan()" style="display:none;">❌ Cancel</button>
+        </div>
+
+        <div id="status"></div>
+    </div>
+
+    <!-- Results -->
+    <div class="controls" id="results" style="display:none;">
+        <div class="results-header">
+            <span>Found <strong id="total-groups">0</strong> duplicate groups</span>
+            <span><strong id="total-files">0</strong> files</span>
+        </div>
+
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-value" id="stats-files">0</div>
+                <div class="stat-label">Total Files</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="stats-groups">0</div>
+                <div class="stat-label">Duplicate Groups</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="stats-space">0 MB</div>
+                <div class="stat-label">Potential Space</div>
+            </div>
+        </div>
+
+        <div class="grid" id="grid">
+            <!-- Cards inserted here -->
+        </div>
+    </div>
+
+    <!-- Report Section -->
+    <div id="report-section">
+        <h3>📄 Report</h3>
+        <textarea id="report-text" readonly>Generating report...</textarea>
+        <div style="margin-top: 10px;">
+            <button class="btn btn-success" onclick="copyReport()">Copy to Clipboard</button>
+            <button class="btn btn-secondary" onclick="downloadReport()">Download .txt</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // State
+    let scanInProgress = false;
+    let duplicateGroups = {};
+    let selectedFiles = new Set();
+
+    // Browse for folder
+    function browseFolder() {
+        if (window.showDirectoryPicker) {
+            // modern Web File System API
+            window.showDirectoryPicker().then(dir => {
+                const paths = [];
+                readDirRecursive(dir, paths);
+                document.getElementById('folder-path').value = paths.join(', ');
+            }).catch(err => {
+                console.error('showDirectoryPicker failed:', err);
+                fallbackBrowse();
+            });
+        } else {
+            fallbackBrowse();
+        }
+    }
+
+    function fallbackBrowse() {
+        // Using file input + Folder Access API guess
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.multiple = true;
+        input.accept = '.js,.html,.txt,.py,.jpg,.png,.pdf,.docx';
+        input.style.display = 'none';
+        document.body.appendChild(input);
+        input.click();
+        setTimeout(() => {
+            const files = Array.from(input.files).map(f => f.webkitRelativePath || f.name);
+            document.getElementById('folder-path').value = files.join(', ');
+            document.body.removeChild(input);
+        }, 100);
+    }
+
+    // Read directory recursively (Web APIs limited, using File System API approximation)
+    async function readDirRecursive(dir, paths = []) {
+        try {
+            for await (const entry of dir.createIterator()) {
+                if (entry.kind === 'file') {
+                    paths.push(entry.name);
+                } else if (entry.kind === 'directory') {
+                    await readDirRecursive(entry, paths);
+                }
+            }
+        } catch (e) {
+            // Ignore permission errors
+        }
+    }
+
+    // Start scan
+    async function startScan() {
+        if (scanInProgress) return;
+
+        const folderPath = document.getElementById('folder-path').value.trim();
+        if (!folderPath) {
+            showStatus('Please select a folder first', 'error');
+            return;
+        }
+
+        const excludeFolders = document.getElementById('exclude-folders').value.split(',')
+            .map(f => f.trim().toLowerCase()).filter(f => f);
+        const minSize = parseInt(document.getElementById('min-size').value) || 0;
+        const hashAlgo = document.getElementById('hash-algo').value;
+
+        scanInProgress = true;
+        showStatus('Scanning...', 'progress');
+        document.querySelector('.btn-primary').disabled = true;
+        document.querySelector('.btn-danger').style.display = 'inline-block';
+
+        // In a real app, we'd send this to a backend. For this demo:
+        // We'll simulate with the selected folder's files if they exist
+        // Or use IndexedDB / local files via File API
+        
+        try {
+            // Try to access folder using File System API
+            const handle = await window.showDirectoryPicker();
+            const groups = await scanFolder(handle, excludeFolders, minSize, hashAlgo);
+            displayResults(groups);
+        } catch (err) {
+            showStatus('Scan failed: ' + err.message, 'error');
+        }
+
+        scanInProgress = false;
+        document.querySelector('.btn-primary').disabled = false;
+        document.querySelector('.btn-danger').style.display = 'none';
+    }
+
+    // Simulated scan - in production would compute real hashes
+    async function scanFolder(folderHandle, excludeFolders, minSize, hashAlgo) {
+        // This is a demonstration - real implementation would:
+        // 1. Enumerate files in folderHandle
+        // 2. Read file contents
+        // 3. Compute hashes
+        // 4. Group duplicates
+        
+        // For now, create some demo data
+        return {
+            groups: Math.floor(Math.random() * 5) + 1,
+            files: Math.floor(Math.random() * 50) + 1,
+            space: (Math.random() * 100).toFixed(1)
+        };
+    }
+
+    // Display results
+    function displayResults(result) {
+        const grid = document.getElementById('grid');
+        const totalGroups = document.getElementById('total-groups');
+        const totalFiles = document.getElementById('total-files');
+        const statsFiles = document.getElementById('stats-files');
+        const statsGroups = document.getElementById('stats-groups');
+        const statsSpace = document.getElementById('stats-space');
+
+        // Update stats
+        totalGroups.textContent = result.groups;
+        totalFiles.textContent = result.files;
+        statsFiles.textContent = result.files;
+        statsGroups.textContent = result.groups;
+        statsSpace.textContent = result.space + ' MB';
+
+        // Show results section
+        document.getElementById('results').style.display = 'block';
+
+        // Generate sample cards
+        let html = '';
+        for (let i = 1; i <= Math.min(result.groups, 5); i++) {
+            html += `
+            <div class="card">
+                <div class="card-header">
+                    <h3>Group #${i}</h3>
+                    <span class="hash">SHA256: ${Math.random().toString(36).substring(2, 20)}...</span>
+                </div>
+                <div class="card-body">
+                    <div class="checkbox-group">
+                        <input type="checkbox" onClick="toggleSelect(this)" data-group="${i}">
+                        <span>Select this group</span>
+                    </div>
+                    <div class="file-path">
+                        /path/to/duplicate_file_01_${i}.jpg<br>
+                        <small>/path/to/duplicate_file_02_${i}.jpg</small>
+                    </div>
+                </div>
+            </div>`;
+        }
+
+        grid.innerHTML = html || '<p>No duplicates found.</p>';
+
+        // Show report section
+        document.getElementById('report-section').style.display = 'block';
+    }
+
+    function toggleSelect(checkbox) {
+        const group = checkbox.getAttribute('data-group');
+        if (checkbox.checked) {
+            selectedFiles.add(group);
+        } else {
+            selectedFiles.delete(group);
+        }
+        updateSelectButtons();
+    }
+
+    function updateSelectButtons() {
+        const deleteBtn = document.querySelector('.btn-danger'); // reuse as action
+        const reportBtn = document.querySelector('.btn-success');
+        const count = selectedFiles.size;
+        
+        if (count > 0) {
+            showStatus(` ${count} group(s) selected for action`, 'success');
+        } else {
+            showStatus('Ready', 'default');
+        }
+    }
+
+    // Report
+    function generateReport() {
+        const report = `DUPLICATE FILE FINDER REPORT
+========================================
+Scan Date: ${new Date().toLocaleString()}
+========================================
+
+Total Duplicate Groups: ${document.getElementById('total-groups').textContent}
+Total Files: ${document.getElementById('total-files').textContent}
+
+Potential Space Savings: ${document.getElementById('stats-space').textContent}
+
+Top Groups:
+========================================
+`;
+
+        const textarea = document.getElementById('report-text');
+        textarea.value = report;
+        document.getElementById('report-section').style.display = 'block';
+    }
+
+    function copyReport() {
+        const textarea = document.getElementById('report-text');
+        textarea.select();
+        document.execCommand('copy');
+        showStatus('Report copied to clipboard!', 'success');
+    }
+
+    function downloadReport() {
+        const textarea = document.getElementById('report-text');
+        const blob = new Blob([textarea.value], {type: 'text/plain'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'duplicate_report.txt';
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+
+    // Status helper
+    function showStatus(msg, type = 'default') {
+        const status = document.getElementById('status');
+        status.textContent = msg;
+        status.className = type;
+        status.style.display = 'block';
+        
+        setTimeout(() => {
+            status.style.display = 'none';
+        }, 5000);
+    }
+</script>
+
+</body>
+</html>
